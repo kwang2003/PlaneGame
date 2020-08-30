@@ -79,7 +79,8 @@ class Hero(Plane):
     """我方战机"""
 
     def __init__(self, game):
-        super(Hero, self).__init__(game, pygame.image.load("./feiji/hero.png"))
+        idx = randint(1,4)
+        super(Hero, self).__init__(game, pygame.image.load("./feiji/hero_%02d.png"%idx))
         pass
 
     def display(self):
@@ -115,7 +116,8 @@ class Enemy(Plane):
     """敌机"""
 
     def __init__(self, game):
-        super(Enemy, self).__init__(game, pygame.image.load("./feiji/enemy02.png"))
+        bidx = randint(1, 13)
+        super(Enemy, self).__init__(game, pygame.image.load("./feiji/enemy_%02d.png"%bidx))
         self.x = 0
         self.y = 0
         self.direction = 'right'
@@ -141,7 +143,7 @@ class Enemy(Plane):
         pass
 
     def move(self):
-        delta = 0.5
+        delta = 1
         if self.direction == 'right':
             self.x += delta
         elif self.direction == 'left':
@@ -191,13 +193,14 @@ class HeroBullet(Bullet):
     """我方战机子弹"""
 
     def __init__(self, x, y, game):
-        image = pygame.image.load('./feiji/bullet_hero_01.png')
+        bidx = randint(1, 3)
+        image = pygame.image.load('./feiji/bullet_hero_%02d.png'%bidx)
         super(HeroBullet, self).__init__(x, y, game, image)
 
     pass
 
     def move(self):
-        self.y -= 2
+        self.y -= 3
         pass
 
     def judge(self):
@@ -211,10 +214,11 @@ class EnemyBullet(Bullet):
     """我方战机子弹"""
 
     def __init__(self, x, y, game):
-        image = pygame.image.load('./feiji/bullet_enemy_01.png')
+        bidx = randint(1, 2)
+        image = pygame.image.load('./feiji/bullet_enemy_%02d.png'%bidx)
         w = image.get_width()
         h = image.get_height()
-        super(EnemyBullet, self).__init__(x+w/2, y+h/2, game, image)
+        super(EnemyBullet, self).__init__(x+w, y+h, game, image)
 
     pass
 
@@ -236,7 +240,8 @@ class Game:
         初始化屏幕背景等信息
         :return:
         '''
-        self.backgroud = pygame.image.load('./feiji/bg.jpg')
+        bidx = randint(1,11)
+        self.backgroud = pygame.image.load('./feiji/bg_%02d.jpg'%bidx)
         self.width = self.backgroud.get_width()
         self.height = self.backgroud.get_height()
         self.screen = pygame.display.set_mode((self.width, self.height), 0, 32)
@@ -260,6 +265,7 @@ class Game:
         '''
         self.__init_screen()
         self.__init_music()
+        pygame.key.set_repeat(1, 50) # 表示每隔50毫秒发送一个pygame.KEYDOWN，事件间隔1毫秒
 
     def get_screen(self):
         '''
@@ -287,7 +293,10 @@ class Game:
         enemy = Enemy(self)
         # 载入玩家
         hero = Hero(self)
+        clock = pygame.time.Clock()
         while True:
+            # 一秒钟60帧
+            clock.tick(60)
             # 显示背景图片
             self.screen.blit(self.backgroud, (0, 0))
             # 显示玩家图片
@@ -295,13 +304,14 @@ class Game:
             enemy.display()
             enemy.move()
             #敌机随机发射子弹
-            i = randint(1,50)
-            if i == 3:
+            i = randint(1,90)
+            if i == 5:
                 enemy.fire()
             # 获取键盘事件
             self.__key_control(hero)
 
             pygame.display.update()
+            #pygame.time.delay(100)
         pass
 
     def __key_control(self, hero):
@@ -311,24 +321,27 @@ class Game:
                 print("退出")
                 exit()
             elif event.type == pygame.KEYDOWN:
-                self.__handleEvent(event, hero)
+                self.__handleEvent(event.key, hero)
+        key_pressed = pygame.key.get_pressed()
+        for key in key_pressed:
+            self.__handleEvent(key,hero)
 
-    def __handleEvent(self, event, hero):
+    def __handleEvent(self, key, hero):
         '''
         响应键盘控制事件
         :param event:
         :param hero:
         :return:
         '''
-        if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+        if key == pygame.K_LEFT or key == pygame.K_a:
             hero.left()
-        elif event.key == pygame.K_UP or event.key == pygame.K_w:
+        elif key == pygame.K_UP or key == pygame.K_w:
             hero.up()
-        elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+        elif key == pygame.K_RIGHT or key == pygame.K_d:
             hero.right()
-        elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+        elif key == pygame.K_DOWN or key == pygame.K_s:
             hero.down()
-        elif event.key == pygame.K_SPACE:
+        elif key == pygame.K_SPACE:
             print("发射子弹")
             hero.fire()
 
