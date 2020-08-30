@@ -1,5 +1,6 @@
 import pygame
 from random import randint
+from pygame.sprite import Sprite
 
 
 # http://www.aigei.com/game2d/
@@ -42,7 +43,7 @@ class Location:
         self.__y = y
 
 
-class Plane(ImageItem, Location):
+class Plane(ImageItem, Location,Sprite):
     """飞机抽象类"""
 
     def __init__(self, game, image, speed=5):
@@ -54,12 +55,13 @@ class Plane(ImageItem, Location):
         self.__game = game
         self.gameMap = gameMap
         self.screen = gameMap.get_screen()
-        self.bullets = []
+        self.__bullets = []
         ImageItem.__init__(self, image)
         x = gameMap.get_width() / 2 - self.get_width() / 2
         y = gameMap.get_height() - self.get_height()
         Location.__init__(self, x, y)
         self.__speed = speed  # 移动速度
+        Sprite.__init__(self)
 
     def left(self):
         print("往左走")
@@ -104,14 +106,14 @@ class Plane(ImageItem, Location):
         '''
         self.screen.blit(self.get_image(), (self.get_x(), self.get_y()))
         needToDelete = []
-        for item in self.bullets:
+        for item in self.get_bullets():
             if item.judge():
                 needToDelete.append(item)
         # 删除
         for item in needToDelete:
-            self.bullets.remove(item)
+            self.get_bullets().remove(item)
 
-        for item in self.bullets:
+        for item in self.get_bullets():
             item.display()
             if self.__game.is_running():
                 item.move()
@@ -127,6 +129,10 @@ class Plane(ImageItem, Location):
     def get_speed(self):
         """获取飞机的移动速度"""
         return self.__speed
+
+    def get_bullets(self):
+        """飞机发射出的子弹"""
+        return self.__bullets;
 
 
 class Hero(Plane):
@@ -144,7 +150,7 @@ class Hero(Plane):
         :return:
         """
         bullet = HeroBullet(self);
-        self.bullets.append(bullet)
+        self.get_bullets().append(bullet)
         pass
 
 
@@ -152,7 +158,6 @@ class Enemy(Plane):
     """敌机"""
 
     def __init__(self, game, image):
-        bidx = randint(1, 7)
         super().__init__(game, image, speed=3)
         self.set_x(0)
         self.set_y(0)
@@ -181,11 +186,11 @@ class Enemy(Plane):
         :return:
         """
         bullet = EnemyBullet(self);
-        self.bullets.append(bullet)
+        self.get_bullets().append(bullet)
         pass
 
 
-class Bullet(ImageItem, Location):
+class Bullet(ImageItem, Location,Sprite):
     """子弹抽象类"""
 
     def __init__(self, plane, image, speed=3):
@@ -195,6 +200,7 @@ class Bullet(ImageItem, Location):
         ImageItem.__init__(self, image)
         Location.__init__(self, x, y)
         self.speed = speed
+        Sprite.__init__(self)
         pass
 
     def display(self):
@@ -333,6 +339,8 @@ class Game:
 
     def __init__(self):
         self.__paused = False
+        self.__hero = None
+        self.__enemies = []
 
     def __init_screen(self):
         """
@@ -369,6 +377,16 @@ class Game:
         碰撞检测
         :return:
         """
+        # 检查英雄子弹是否击中敌机
+        for b in self.__hero.get_bullets():
+            """collisions = pygame.sprite.groupcollide(b, self.__hero, True, True)
+            if collisions:
+                for aliens in collisions.values():
+                    print("击中了") """
+
+        # 检查敌机是否碰撞到英雄
+        # 检查敌机子弹是否击中英雄
+
     def get_map(self):
         return self.__map
 
@@ -384,9 +402,12 @@ class Game:
         # 载入敌人
         enemyFactory = EnemyFactory()
         enemy = enemyFactory.create(self, randint(1, 7))
+        self.__enemies.append(enemy)
         # 载入玩家
         heroFactory = HeroFactory()
         hero = heroFactory.create(self, randint(1, 4))
+        self.__hero = hero
+
         clock = pygame.time.Clock()
         while True:
             # 一秒钟60帧
