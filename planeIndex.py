@@ -2,32 +2,57 @@ import pygame
 from random import randint
 
 # http://www.aigei.com/game2d/
-step = 5
+
+class ImageItem:
+    """带图片的对象，可能是战机，也可能是子弹"""
+    def __init__(self,image):
+        self.__image = image;
+        self.__width = self.__image.get_width()
+        self.__height = self.__image.get_height()
+    def get_width(self):
+        return self.__width
+    def get_height(self):
+        return self.__height
+    def get_image(self):
+        return self.__image
 
 
-class Plane:
+class Location:
+    """有坐标的对象"""
+    def __init__(self,x,y):
+        self.__x = x
+        self.__y = y
+    def get_x(self):
+        return self.__x
+    def set_x(self,x):
+        self.__x = x
+    def get_y(self):
+        return self.__y
+    def set_y(self,y):
+        self.__y = y
+
+
+class Plane(ImageItem,Location):
     """飞机抽象类"""
 
-    def __init__(self, game, image):
+    def __init__(self, gameMap, image,speed = 5):
         '''
         初始化函数
         :param screen: 主窗体对象
         '''
-        self.game = game
-        self.screen = game.get_screen()
-        self.image = image
+        self.gameMap = gameMap
+        self.screen = gameMap.get_screen()
         self.bullets = []
-        self.planeWidth = image.get_width()
-        self.planeHeight = image.get_height()
-        self.x = game.get_width() / 2 - self.planeWidth / 2
-        self.y = game.get_height() - self.planeHeight
-
-        pass
+        ImageItem.__init__(self,image)
+        x = gameMap.get_width() / 2 - self.get_width()/2
+        y = gameMap.get_height() - self.get_height()
+        Location.__init__(self,x,y)
+        self.__speed = speed # 移动速度
 
     def left(self):
         print("往左走")
-        if self.x > 0:
-            self.x -= step
+        if self.get_x() > 0:
+            self.set_x(self.get_x() - self.__speed)
         pass
 
     def right(self):
@@ -36,8 +61,8 @@ class Plane:
         :return:
         """
         print("往右走")
-        if self.x < self.game.get_width() - self.planeWidth:
-            self.x += step
+        if self.get_x() < self.gameMap.get_width() - self.get_width():
+            self.set_x(self.get_x() + self.__speed)
         pass
 
     def up(self):
@@ -46,8 +71,8 @@ class Plane:
         :return:
         """
         print("往上走")
-        if self.y > 0:
-            self.y -= step
+        if self.get_y() > 0:
+            self.set_y(self.get_y() - self.__speed)
         pass
 
     def down(self):
@@ -56,8 +81,8 @@ class Plane:
         :return:
         """
         print("往下走")
-        if self.y < self.game.get_height() - self.planeHeight:
-            self.y += step
+        if self.get_y() < self.gameMap.get_height() - self.get_height():
+            self.set_y(self.get_y() + self.__speed)
         pass
 
     def display(self):
@@ -74,13 +99,16 @@ class Plane:
         """
         pass
 
+    def get_speed(self):
+        """获取飞机的移动速度"""
+        return self.__speed
 
 class Hero(Plane):
     """我方战机"""
 
-    def __init__(self, game):
+    def __init__(self, gameMap):
         idx = randint(1,4)
-        super(Hero, self).__init__(game, pygame.image.load("./feiji/hero_%02d.png"%idx))
+        super().__init__(gameMap, pygame.image.load("./feiji/hero_%02d.png"%idx))
         pass
 
     def display(self):
@@ -88,7 +116,7 @@ class Hero(Plane):
         飞机在主窗口中的展示
         :return  :
         '''
-        self.screen.blit(self.image, (self.x, self.y))
+        self.screen.blit(self.get_image(), (self.get_x(), self.get_y()))
         needToDelete = []
         for item in self.bullets:
             if item.judge():
@@ -107,7 +135,7 @@ class Hero(Plane):
         开火
         :return:
         """
-        bullet = HeroBullet(self.x, self.y, self.game);
+        bullet = HeroBullet(self);
         self.bullets.append(bullet)
         pass
 
@@ -115,12 +143,12 @@ class Hero(Plane):
 class Enemy(Plane):
     """敌机"""
 
-    def __init__(self, game):
-        bidx = randint(1, 13)
-        super(Enemy, self).__init__(game, pygame.image.load("./feiji/enemy_%02d.png"%bidx))
-        self.x = 0
-        self.y = 0
-        self.direction = 'right'
+    def __init__(self, gameMap):
+        bidx = randint(1, 7)
+        super().__init__(gameMap, pygame.image.load("./feiji/enemy_%02d.png"%bidx),speed=3)
+        self.set_x(0)
+        self.set_y(0)
+        self.__direction = 'right'
         pass
 
     def display(self):
@@ -128,7 +156,7 @@ class Enemy(Plane):
         飞机在主窗口中的展示
         :return:
         '''
-        self.screen.blit(self.image, (self.x, self.y))
+        self.screen.blit(self.get_image(), (self.get_x(), self.get_y()))
         needToDelete = []
         for item in self.bullets:
             if item.judge():
@@ -143,19 +171,19 @@ class Enemy(Plane):
         pass
 
     def move(self):
-        delta = 1
-        if self.direction == 'right':
-            self.x += delta
-        elif self.direction == 'left':
-            self.x -= delta
+        speed = self.get_speed()
+        if self.__direction == 'right':
+            self.set_x(self.get_x() + speed)
+        elif self.__direction == 'left':
+            self.set_x(self.get_x() - speed)
 
         # 检查边界
-        if self.x < 0:
-            self.x += delta;
-            self.direction = 'right'
-        elif self.x > self.game.get_width():
-            self.x -= delta
-            self.direction = 'left'
+        if self.get_x() < 0:
+            self.set_x(self.get_x() + speed)
+            self.__direction = 'right'
+        elif self.get_x()+self.get_width() > self.gameMap.get_width():
+            self.set_x(self.get_x() - speed)
+            self.__direction = 'left'
 
     def fire(self):
 
@@ -163,23 +191,25 @@ class Enemy(Plane):
         开火
         :return:
         """
-        bullet = EnemyBullet(self.x, self.y, self.game);
+        bullet = EnemyBullet(self);
         self.bullets.append(bullet)
         pass
 
 
-class Bullet:
+class Bullet(ImageItem,Location):
     """子弹抽象类"""
 
-    def __init__(self, x, y, game, image):
-        self.x = x
-        self.y = y
-        self.game = game
-        self.image = image
+    def __init__(self, plane, image, speed = 3):
+        self.gameMap = plane.gameMap
+        x = plane.get_x() + plane.get_width()/2
+        y = plane.get_y() + plane.get_height()/2
+        ImageItem.__init__(self,image)
+        Location.__init__(self,x,y)
+        self.speed = speed
         pass
 
     def display(self):
-        self.game.get_screen().blit(self.image, (self.x, self.y))
+        self.gameMap.get_screen().blit(self.get_image(), (self.get_x(), self.get_y()))
         pass
 
     def move(self):
@@ -192,19 +222,19 @@ class Bullet:
 class HeroBullet(Bullet):
     """我方战机子弹"""
 
-    def __init__(self, x, y, game):
-        bidx = randint(1, 3)
+    def __init__(self, plane,speed = 5):
+        bidx = randint(1, 1)
         image = pygame.image.load('./feiji/bullet_hero_%02d.png'%bidx)
-        super(HeroBullet, self).__init__(x, y, game, image)
+        super(HeroBullet, self).__init__(plane, image,speed)
 
     pass
 
     def move(self):
-        self.y -= 3
+        self.set_y(self.get_y() - self.speed)
         pass
 
     def judge(self):
-        if self.y <= 0:
+        if self.get_y() <= 0:
             return True
         else:
             return False
@@ -213,26 +243,24 @@ class HeroBullet(Bullet):
 class EnemyBullet(Bullet):
     """我方战机子弹"""
 
-    def __init__(self, x, y, game):
-        bidx = randint(1, 2)
+    def __init__(self, plane,speed = 3):
+        bidx = randint(2, 2)
         image = pygame.image.load('./feiji/bullet_enemy_%02d.png'%bidx)
-        w = image.get_width()
-        h = image.get_height()
-        super(EnemyBullet, self).__init__(x+w, y+h, game, image)
+        super(EnemyBullet, self).__init__(plane, image,speed)
 
     pass
 
     def move(self):
-        self.y += 2
+        self.set_y(self.get_y() + self.speed)
 
     def judge(self):
-        if self.y > self.game.get_height():
+        if self.get_y() > self.gameMap.get_height():
             return True
         else:
             return False
 
 
-class Background:
+class GameMap:
     """游戏滚动背景"""
     def __init__(self,image):
         self.image1 = image
@@ -263,7 +291,7 @@ class Background:
         :return:
         '''
         self.screen.blit(self.image1, (0, self.y1))
-        self.screen.blit(self.image1, (0, self.y2))
+        self.screen.blit(self.image2, (0, self.y2))
 
     def get_screen(self):
         """
@@ -295,12 +323,9 @@ class Game:
         初始化屏幕背景等信息
         :return:
         """
-        bidx = randint(1,11)
+        bidx = randint(1,7)
         image = pygame.image.load('./feiji/bg_%02d.jpg' % bidx)
-        self.backgroud = Background(image)
-        self.width = self.backgroud.get_width()
-        self.height = self.backgroud.get_height()
-        self.screen = self.backgroud.get_screen()
+        self.gameMap = GameMap(image)
         pygame.display.set_caption('飞机大战V2.0')
         pass
 
@@ -321,42 +346,27 @@ class Game:
         '''
         self.__init_screen()
         self.__init_music()
-        pygame.key.set_repeat(1, 50) # 表示每隔50毫秒发送一个pygame.KEYDOWN，事件间隔1毫秒
+        #pygame.key.set_repeat(1, 50) # 表示每隔50毫秒发送一个pygame.KEYDOWN，事件间隔1毫秒
 
-    def get_screen(self):
-        '''
-        返回游戏的屏幕对象
+    def detect_conlision(self):
+        """
+        碰撞检测
         :return:
-        '''
-        return self.screen
-
-    def get_width(self):
-        '''
-        返回游戏的宽度
-        :return:
-        '''
-        return self.width
-
-    def get_height(self):
-        '''
-        返回游戏的高度
-        :return:
-        '''
-        return self.height
+        """
 
     def start(self):
         # 载入敌人
-        enemy = Enemy(self)
+        enemy = Enemy(self.gameMap)
         # 载入玩家
-        hero = Hero(self)
+        hero = Hero(self.gameMap)
         clock = pygame.time.Clock()
         while True:
             # 一秒钟60帧
             clock.tick(60)
             # 显示背景图片
-            #self.screen.blit(self.backgroud, (0, 0))
-            self.backgroud.rolling()
-            self.backgroud.draw()
+            #self.screen.blit(self.gameMap, (0, 0))
+            self.gameMap.rolling()
+            self.gameMap.draw()
             # 显示玩家图片
             hero.display()
             enemy.display()
@@ -365,8 +375,10 @@ class Game:
             i = randint(1,90)
             if i == 5:
                 enemy.fire()
+            self.detect_conlision()
             # 获取键盘事件
             self.__key_control(hero)
+            self.key_pressed(hero)
 
             pygame.display.update()
             #pygame.time.delay(100)
@@ -403,6 +415,23 @@ class Game:
             print("发射子弹")
             hero.fire()
 
+    def key_pressed(self,hero):
+        """
+        检测按键按下事件
+        :return:
+        """
+        key_pressed = pygame.key.get_pressed()
+        if key_pressed[pygame.K_LEFT] or key_pressed[pygame.K_a]:
+            hero.left()
+        elif key_pressed[pygame.K_UP] or key_pressed[pygame.K_w]:
+            hero.up()
+        elif key_pressed[pygame.K_RIGHT] or key_pressed[pygame.K_d]:
+            hero.right()
+        elif key_pressed[pygame.K_DOWN] or key_pressed[pygame.K_s]:
+            hero.down()
+        elif key_pressed[pygame.K_SPACE]:
+            print("发射子弹")
+            hero.fire()
 
 def main():
     game = Game()
