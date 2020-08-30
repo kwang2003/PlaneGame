@@ -377,14 +377,14 @@ class Game:
                 enemy.fire()
             self.detect_conlision()
             # 获取键盘事件
-            self.__key_control(hero)
+            self.key_control(hero)
             self.key_pressed(hero)
 
             pygame.display.update()
             #pygame.time.delay(100)
         pass
 
-    def __key_control(self, hero):
+    def key_control(self, hero):
         eventlist = pygame.event.get()
         for event in eventlist:
             if event.type == pygame.QUIT:
@@ -392,9 +392,6 @@ class Game:
                 exit()
             elif event.type == pygame.KEYDOWN:
                 self.__handleEvent(event.key, hero)
-        key_pressed = pygame.key.get_pressed()
-        for key in key_pressed:
-            self.__handleEvent(key,hero)
 
     def __handleEvent(self, key, hero):
         '''
