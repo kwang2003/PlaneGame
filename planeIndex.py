@@ -232,20 +232,76 @@ class EnemyBullet(Bullet):
             return False
 
 
+class Background:
+    """游戏滚动背景"""
+    def __init__(self,image):
+        self.image1 = image
+        self.image2 = self.image1.copy()
+        self.width = self.image1.get_width()
+        self.height = self.image1.get_height()
+        self.x1 = 0
+        self.y1 = 0
+        self.x2 = 0
+        self.y2 = - self.height
+        self.screen = pygame.display.set_mode((self.width, self.height), 0, 32)
+
+    def rolling(self):
+        '''
+        滚动背景
+        :return:
+        '''
+        self.y1 += 1
+        self.y2 += 1
+        if self.y1 > self.height:
+            self.y1 = 0
+        if self.y2 > 0:
+            self.y2 = - self.height
+
+    def draw(self):
+        '''
+        绘制背景
+        :return:
+        '''
+        self.screen.blit(self.image1, (0, self.y1))
+        self.screen.blit(self.image1, (0, self.y2))
+
+    def get_screen(self):
+        """
+        返回游戏的屏幕对象
+        :return:
+        """
+        return self.screen
+
+    def get_width(self):
+        """
+        返回游戏的宽度
+        :return:
+        """
+        return self.width
+
+    def get_height(self):
+        """
+        返回游戏的高度
+        :return:
+        """
+        return self.height
+
+
 class Game:
     """游戏类"""
 
     def __init_screen(self):
-        '''
+        """
         初始化屏幕背景等信息
         :return:
-        '''
+        """
         bidx = randint(1,11)
-        self.backgroud = pygame.image.load('./feiji/bg_%02d.jpg'%bidx)
+        image = pygame.image.load('./feiji/bg_%02d.jpg' % bidx)
+        self.backgroud = Background(image)
         self.width = self.backgroud.get_width()
         self.height = self.backgroud.get_height()
-        self.screen = pygame.display.set_mode((self.width, self.height), 0, 32)
-        pygame.display.set_caption('飞机大战V1.0')
+        self.screen = self.backgroud.get_screen()
+        pygame.display.set_caption('飞机大战V2.0')
         pass
 
     def __init_music(self):
@@ -298,7 +354,9 @@ class Game:
             # 一秒钟60帧
             clock.tick(60)
             # 显示背景图片
-            self.screen.blit(self.backgroud, (0, 0))
+            #self.screen.blit(self.backgroud, (0, 0))
+            self.backgroud.rolling()
+            self.backgroud.draw()
             # 显示玩家图片
             hero.display()
             enemy.display()
