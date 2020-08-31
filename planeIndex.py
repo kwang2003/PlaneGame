@@ -379,6 +379,10 @@ class Game:
         """
         # 检查英雄子弹是否击中敌机
         for b in self.__hero.get_bullets():
+            for e in self.__enemies:
+                if self.is_conlision(b,e) or self.is_conlision(e,b):
+                    print("敌机被击中".format(e.get_x(),e.get_y()))
+                    pygame.time.delay(100000)
             """collisions = pygame.sprite.groupcollide(b, self.__hero, True, True)
             if collisions:
                 for aliens in collisions.values():
@@ -387,6 +391,16 @@ class Game:
         # 检查敌机是否碰撞到英雄
         # 检查敌机子弹是否击中英雄
 
+    def is_conlision(self,a,b):
+        """
+        判断两个元素是否发生碰撞
+        :param a:
+        :param b:
+        :return:
+        """
+        flag_x = a.get_x() >= b.get_x() and a.get_x() <= b.get_x() + b.get_width()
+        flag_y = a.get_y() >= b.get_y() and a.get_y() <= b.get_y() + b.get_height()
+        return flag_x and flag_y
     def get_map(self):
         return self.__map
 
@@ -488,8 +502,9 @@ class Game:
         elif key_pressed[pygame.K_DOWN] or key_pressed[pygame.K_s]:
             hero.down()
         elif key_pressed[pygame.K_SPACE]:
-            print("发射子弹")
-            hero.fire()
+            #print("发射子弹")
+            #hero.fire()
+            pass
 
 
 def main():
