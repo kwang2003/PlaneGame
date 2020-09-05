@@ -54,7 +54,7 @@ class Plane(ImageItem, Location,Sprite):
         gameMap = game.get_map()
         self.__game = game
         self.gameMap = gameMap
-        self.screen = gameMap.get_screen()
+        #self.screen = gameMap.get_screen()
         self.__bullets = []
         ImageItem.__init__(self, image)
         x = gameMap.get_width() / 2 - self.get_width() / 2
@@ -99,12 +99,12 @@ class Plane(ImageItem, Location,Sprite):
             self.set_y(self.get_y() + self.__speed)
         pass
 
-    def display(self):
+    def display(self,screen):
         '''
         飞机在主窗口中的展示
         :return:
         '''
-        self.screen.blit(self.get_image(), (self.get_x(), self.get_y()))
+        screen.blit(self.get_image(), (self.get_x(), self.get_y()))
         needToDelete = []
         for item in self.get_bullets():
             if item.judge():
@@ -114,7 +114,7 @@ class Plane(ImageItem, Location,Sprite):
             self.get_bullets().remove(item)
 
         for item in self.get_bullets():
-            item.display()
+            item.display(screen)
             if self.__game.is_running():
                 item.move()
         pass
@@ -192,14 +192,13 @@ class Enemy(Plane):
 
 class Bomb(ImageItem, Location):
     """爆炸效果"""
-    def __init__(self,map,x,y):
+    def __init__(self,x,y):
         image = pygame.image.load('./feiji/bomb_01.gif')
         ImageItem.__init__(self,image)
         Location.__init__(self,x,y)
-        self.__map = map
 
-    def display(self):
-        self.__map.get_screen().blit(self.get_image(), (self.get_x(), self.get_y()))
+    def display(self,screen):
+        screen.blit(self.get_image(), (self.get_x(), self.get_y()))
 
 
 class Bullet(ImageItem, Location,Sprite):
@@ -215,8 +214,8 @@ class Bullet(ImageItem, Location,Sprite):
         Sprite.__init__(self)
         pass
 
-    def display(self):
-        self.gameMap.get_screen().blit(self.get_image(), (self.get_x(), self.get_y()))
+    def display(self,screen):
+        screen.blit(self.get_image(), (self.get_x(), self.get_y()))
         pass
 
     def move(self):
@@ -293,13 +292,13 @@ class GameMap:
         if self.y2 > 0:
             self.y2 = - self.height
 
-    def draw(self):
+    def display(self,screen):
         '''
         绘制背景
         :return:
         '''
-        self.screen.blit(self.image1, (0, self.y1))
-        self.screen.blit(self.image2, (0, self.y2))
+        screen.blit(self.image1, (0, self.y1))
+        screen.blit(self.image2, (0, self.y2))
 
     def get_screen(self):
         """
@@ -448,11 +447,11 @@ class Game:
             # 一秒钟60帧
             clock.tick(60)
             # 显示背景图片
-            self.__map.draw()
+            self.__map.display(self.__map.get_screen())
             # 显示玩家图片
-            hero.display()
+            hero.display(self.__map.get_screen())
             for e in self.__enemies:
-                e.display()
+                e.display(self.__map.get_screen())
             if not self.__paused:
                 self.__map.rolling()
                 for e in self.__enemies:
@@ -465,7 +464,7 @@ class Game:
 
                 self.detect_conlision()
                 for b in self.__bombs:
-                    b.display()
+                    b.display(self.__map.get_screen())
 
             # 获取键盘事件
             self.key_control(hero)
