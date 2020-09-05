@@ -190,6 +190,18 @@ class Enemy(Plane):
         pass
 
 
+class Bomb(ImageItem, Location):
+    """爆炸效果"""
+    def __init__(self,map,x,y):
+        image = pygame.image.load('./feiji/bomb_01.gif')
+        ImageItem.__init__(self,image)
+        Location.__init__(self,x,y)
+        self.__map = map
+
+    def display(self):
+        self.__map.get_screen().blit(self.get_image(), (self.get_x(), self.get_y()))
+
+
 class Bullet(ImageItem, Location,Sprite):
     """子弹抽象类"""
 
@@ -341,6 +353,7 @@ class Game:
         self.__paused = False
         self.__hero = None
         self.__enemies = []
+        self.__bombs = []
 
     def __init_screen(self):
         """
@@ -382,7 +395,12 @@ class Game:
             for e in self.__enemies:
                 if self.is_conlision(b,e) or self.is_conlision(e,b):
                     print("敌机被击中".format(e.get_x(),e.get_y()))
-                    pygame.time.delay(100000)
+                    #pygame.time.delay(100000)
+                    bomb = (self.__map,e.get_x(),e.get_y())
+                    self.__bombs.append(bomb);
+                    self.__enemies.remove(e)
+                    self.__hero.get_bullets().remove(b)
+                    self.__bombs.remove(bomb)
             """collisions = pygame.sprite.groupcollide(b, self.__hero, True, True)
             if collisions:
                 for aliens in collisions.values():
@@ -415,8 +433,11 @@ class Game:
     def start(self):
         # 载入敌人
         enemyFactory = EnemyFactory()
-        enemy = enemyFactory.create(self, randint(1, 7))
-        self.__enemies.append(enemy)
+        enemy1 = enemyFactory.create(self, randint(1, 7))
+        self.__enemies.append(enemy1)
+        enemy2 = enemyFactory.create(self, randint(1, 7))
+        enemy2.set_x(enemy1.get_x() +200)
+        self.__enemies.append(enemy2)
         # 载入玩家
         heroFactory = HeroFactory()
         hero = heroFactory.create(self, randint(1, 4))
@@ -430,15 +451,21 @@ class Game:
             self.__map.draw()
             # 显示玩家图片
             hero.display()
-            enemy.display()
+            for e in self.__enemies:
+                e.display()
             if not self.__paused:
                 self.__map.rolling()
-                enemy.move()
+                for e in self.__enemies:
+                    e.move()
                 # 敌机随机发射子弹
-                i = randint(1, 90)
-                if i == 5:
-                    enemy.fire()
+                for e in self.__enemies:
+                    i = randint(1, 90)
+                    if i == 30:
+                        e.fire()
+
                 self.detect_conlision()
+                for b in self.__bombs:
+                    b.display()
 
             # 获取键盘事件
             self.key_control(hero)
